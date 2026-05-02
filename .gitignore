@@ -2,6 +2,7 @@
 # Compiled / Build Output
 # ===========================
 target/
+target/maven-archiver
 *.class
 *.jar
 *.war
