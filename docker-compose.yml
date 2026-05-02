@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: novobanco-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-novobanco_db}
+      POSTGRES_USER: ${DB_USER:-novobanco}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-novobanco_pass}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-novobanco} -d ${DB_NAME:-novobanco_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - novobanco-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: novobanco-app
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-novobanco_db}
+      DB_USER: ${DB_USER:-novobanco}
+      DB_PASSWORD: ${DB_PASSWORD:-novobanco_pass}
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - novobanco-net
+    restart: on-failure
+
+volumes:
+  postgres_data:
+
+networks:
+  novobanco-net:
+    driver: bridge

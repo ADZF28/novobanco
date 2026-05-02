@@ -11,11 +11,11 @@ target/
 # ===========================
 # IDE — IntelliJ IDEA
 # ===========================
-.idea/
+.idea/*
 *.iml
 *.iws
 *.ipr
-out/
+.claude
 
 # ===========================
 # IDE — VS Code
@@ -27,6 +27,7 @@ out/
 # ===========================
 .mvn/wrapper/maven-wrapper.jar
 !.mvn/wrapper/maven-wrapper.properties
+.mnv/*
 
 # ===========================
 # Logs
@@ -38,7 +39,6 @@ logs/
 # Environment / Secrets
 # ===========================
 .env
-.env.*
 application-local.yml
 application-local.properties
 
