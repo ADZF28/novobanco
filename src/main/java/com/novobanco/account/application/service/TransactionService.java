@@ -5,9 +5,12 @@ import com.novobanco.account.application.port.in.TransactionPort;
 import com.novobanco.account.application.port.out.AccountRepositoryPort;
 import com.novobanco.account.application.port.out.ClientRepositoryPort;
 import com.novobanco.account.application.port.out.TransactionRepositoryPort;
+import com.novobanco.account.domain.enums.TransactionType;
 import com.novobanco.account.domain.exception.AccountNotFoundException;
+import com.novobanco.account.domain.exception.AccountNotOperableException;
 import com.novobanco.account.domain.exception.ClientNotFoundException;
 import com.novobanco.account.domain.exception.DuplicateTransactionException;
+import com.novobanco.account.domain.exception.InsufficientFundsException;
 import com.novobanco.account.domain.exception.TransactionNotFoundException;
 import com.novobanco.account.domain.model.Account;
 import com.novobanco.account.domain.model.Client;
@@ -29,13 +32,16 @@ public class TransactionService implements TransactionPort {
     private final AccountRepositoryPort accountRepository;
     private final TransactionRepositoryPort transactionRepository;
     private final ClientRepositoryPort clientRepository;
+    private final TransactionAuditService auditService;
 
     public TransactionService(AccountRepositoryPort accountRepository,
                               TransactionRepositoryPort transactionRepository,
-                              ClientRepositoryPort clientRepository) {
+                              ClientRepositoryPort clientRepository,
+                              TransactionAuditService auditService) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.clientRepository = clientRepository;
+        this.auditService = auditService;
     }
 
     @Override
@@ -50,7 +56,13 @@ public class TransactionService implements TransactionPort {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
 
-        AccountDomainService.credit(account, amount);
+        try {
+            AccountDomainService.credit(account, amount);
+        } catch (AccountNotOperableException e) {
+            auditService.recordFailed(account.getId(), TransactionType.DEPOSIT, amount, e.getMessage());
+            throw e;
+        }
+
         accountRepository.save(account);
 
         Transaction tx = Transaction.createDeposit(account.getId(), amount, ref, description);
@@ -69,7 +81,13 @@ public class TransactionService implements TransactionPort {
         Account account = accountRepository.findByAccountNumberWithLock(accountNumber)
                 .orElseThrow(() -> new AccountNotFoundException(accountNumber));
 
-        AccountDomainService.debit(account, amount);
+        try {
+            AccountDomainService.debit(account, amount);
+        } catch (AccountNotOperableException | InsufficientFundsException e) {
+            auditService.recordFailed(account.getId(), TransactionType.WITHDRAWAL, amount, e.getMessage());
+            throw e;
+        }
+
         accountRepository.save(account);
 
         Transaction tx = Transaction.createWithdrawal(account.getId(), amount, ref, description);
@@ -106,8 +124,13 @@ public class TransactionService implements TransactionPort {
 
         UUID transferReference = UUID.randomUUID();
 
-        AccountDomainService.debit(source, amount);
-        AccountDomainService.credit(destination, amount);
+        try {
+            AccountDomainService.debit(source, amount);
+            AccountDomainService.credit(destination, amount);
+        } catch (AccountNotOperableException | InsufficientFundsException e) {
+            auditService.recordFailed(source.getId(), TransactionType.TRANSFER_DEBIT, amount, e.getMessage());
+            throw e;
+        }
 
         accountRepository.save(source);
         accountRepository.save(destination);

@@ -80,4 +80,18 @@ public class Transaction {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
+
+    public static Transaction createFailed(Long accountId, TransactionType type,
+                                           BigDecimal amount, String reason) {
+        return Transaction.builder()
+                .accountId(accountId)
+                .type(type)
+                .amount(amount)
+                .reference(UUID.randomUUID())
+                .status(TransactionStatus.FAILED)
+                .description(reason)
+                .createdAt(LocalDateTime.now())
+                .build();
+    }
+
 }
