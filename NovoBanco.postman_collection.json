@@ -1,0 +1,585 @@
+{
+  "info": {
+    "name": "NovoBanco",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección de endpoints del microservicio de Gestión de Cuentas y Transacciones de NovoBanco"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api/v1", "type": "string" },
+    { "key": "clientIdentification", "value": "1234567890", "type": "string" },
+    { "key": "accountNumber", "value": "", "type": "string" },
+    { "key": "accountNumberSource", "value": "", "type": "string" },
+    { "key": "accountNumberDest", "value": "", "type": "string" },
+    { "key": "transactionReference", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Clientes",
+      "item": [
+        {
+          "name": "Crear cliente - NATIONAL_ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('clientIdentification', json.identification);",
+                  "    pm.test('Cliente creado', function() {",
+                  "        pm.expect(json.identification).to.eql('1234567890');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"María García\",\n  \"email\": \"maria.garcia@example.com\",\n  \"identification\": \"1234567890\",\n  \"typeIdentification\": \"NATIONAL_ID\",\n  \"phone\": \"0991234567\",\n  \"address\": \"Av. República 123, Quito\",\n  \"gender\": \"FEMALE\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Crear cliente - RUC",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Empresa ABC S.A.\",\n  \"email\": \"empresa@abc.com\",\n  \"identification\": \"1792345678001\",\n  \"typeIdentification\": \"RUC\",\n  \"phone\": \"0221234567\",\n  \"address\": \"Av. Amazonas 456, Quito\",\n  \"gender\": \"OTHER\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Crear cliente - PASSPORT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Smith\",\n  \"email\": \"john.smith@example.com\",\n  \"identification\": \"AB123456\",\n  \"typeIdentification\": \"PASSPORT\",\n  \"phone\": \"0987654321\",\n  \"address\": \"Calle 10 N45, Guayaquil\",\n  \"gender\": \"MALE\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Consultar cliente (solo datos + cantidad de cuentas)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientIdentification}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientIdentification}}"]
+            }
+          }
+        },
+        {
+          "name": "Consultar cliente con detalle de cuentas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientIdentification}}?includeAccounts=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientIdentification}}"],
+              "query": [{ "key": "includeAccounts", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Error - Enum inválido typeIdentification (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test\",\n  \"email\": \"test@test.com\",\n  \"identification\": \"9999999999\",\n  \"typeIdentification\": \"CEDULA\",\n  \"phone\": \"0991111111\",\n  \"address\": \"Dirección 123\",\n  \"gender\": \"MALE\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Error - Identificación duplicada (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Otro Usuario\",\n  \"email\": \"otro@example.com\",\n  \"identification\": \"1234567890\",\n  \"typeIdentification\": \"NATIONAL_ID\",\n  \"phone\": \"0991111111\",\n  \"address\": \"Dirección 123\",\n  \"gender\": \"MALE\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          }
+        },
+        {
+          "name": "Error - Cliente no encontrado (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clients/0000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "0000000000"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Cuentas",
+      "item": [
+        {
+          "name": "Crear cuenta de ahorros (balance 0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('accountNumber', json.accountNumber);",
+                  "    pm.collectionVariables.set('accountNumberSource', json.accountNumber);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identification\": \"{{clientIdentification}}\",\n  \"type\": \"SAVINGS\",\n  \"initialStatus\": \"ACTIVE\",\n  \"initialBalance\": 0\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/accounts", "host": ["{{baseUrl}}"], "path": ["accounts"] }
+          }
+        },
+        {
+          "name": "Crear cuenta corriente ($100 inicial)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('accountNumberDest', json.accountNumber);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identification\": \"{{clientIdentification}}\",\n  \"type\": \"CHECKING\",\n  \"initialStatus\": \"ACTIVE\",\n  \"initialBalance\": 100.00\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/accounts", "host": ["{{baseUrl}}"], "path": ["accounts"] }
+          }
+        },
+        {
+          "name": "Obtener cuenta por número",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}"]
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado a BLOCKED",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"BLOCKED\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado a ACTIVE",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"ACTIVE\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado a CLOSED",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"CLOSED\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Error - Enum inválido tipo de cuenta (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identification\": \"{{clientIdentification}}\",\n  \"type\": \"CORRIENTE\",\n  \"initialStatus\": \"ACTIVE\",\n  \"initialBalance\": 100\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/accounts", "host": ["{{baseUrl}}"], "path": ["accounts"] }
+          }
+        },
+        {
+          "name": "Error - Corriente sin depósito mínimo (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identification\": \"{{clientIdentification}}\",\n  \"type\": \"CHECKING\",\n  \"initialStatus\": \"ACTIVE\",\n  \"initialBalance\": 30.00\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/accounts", "host": ["{{baseUrl}}"], "path": ["accounts"] }
+          }
+        },
+        {
+          "name": "Error - Cuenta inexistente (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/accounts/000000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "000000000000000"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Depósitos",
+      "item": [
+        {
+          "name": "Depósito básico (sin referencia)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('transactionReference', json.reference);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 1000.00,\n  \"description\": \"Depósito inicial\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/deposit",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "deposit"]
+            }
+          }
+        },
+        {
+          "name": "Depósito idempotente (con referencia fija)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500.00,\n  \"reference\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"description\": \"Depósito con referencia única\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/deposit",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "deposit"]
+            }
+          }
+        },
+        {
+          "name": "Error - Depósito duplicado (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500.00,\n  \"reference\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"description\": \"Depósito con referencia única\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/deposit",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "deposit"]
+            }
+          }
+        },
+        {
+          "name": "Error - Monto negativo (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": -100.00\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/deposit",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "deposit"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Retiros",
+      "item": [
+        {
+          "name": "Retiro válido",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 200.00,\n  \"description\": \"Retiro cajero\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "withdraw"]
+            }
+          }
+        },
+        {
+          "name": "Retiro idempotente (con referencia fija)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 50.00,\n  \"reference\": \"660e8400-e29b-41d4-a716-446655440001\",\n  \"description\": \"Retiro idempotente\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "withdraw"]
+            }
+          }
+        },
+        {
+          "name": "Error - Fondos insuficientes (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 999999.00,\n  \"description\": \"Retiro excesivo\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/withdraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "withdraw"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Transferencias",
+      "item": [
+        {
+          "name": "Transferencia válida entre dos cuentas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.debit && json.debit.reference) {",
+                  "        pm.collectionVariables.set('transactionReference', json.debit.reference);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{accountNumberSource}}\",\n  \"destinationAccountNumber\": \"{{accountNumberDest}}\",\n  \"amount\": 300.00,\n  \"description\": \"Pago de servicios\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/transfers", "host": ["{{baseUrl}}"], "path": ["transfers"] }
+          }
+        },
+        {
+          "name": "Transferencia idempotente (con referencia fija)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{accountNumberSource}}\",\n  \"destinationAccountNumber\": \"{{accountNumberDest}}\",\n  \"amount\": 50.00,\n  \"reference\": \"770e8400-e29b-41d4-a716-446655440002\",\n  \"description\": \"Transferencia idempotente\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/transfers", "host": ["{{baseUrl}}"], "path": ["transfers"] }
+          }
+        },
+        {
+          "name": "Error - Auto-transferencia (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{accountNumber}}\",\n  \"destinationAccountNumber\": \"{{accountNumber}}\",\n  \"amount\": 100.00\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/transfers", "host": ["{{baseUrl}}"], "path": ["transfers"] }
+          }
+        },
+        {
+          "name": "Error - Referencia duplicada en transferencia (409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceAccountNumber\": \"{{accountNumberSource}}\",\n  \"destinationAccountNumber\": \"{{accountNumberDest}}\",\n  \"amount\": 50.00,\n  \"reference\": \"770e8400-e29b-41d4-a716-446655440002\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/transfers", "host": ["{{baseUrl}}"], "path": ["transfers"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Historial de Transacciones",
+      "item": [
+        {
+          "name": "Historial - página 1 (20 por defecto)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "transactions"]
+            }
+          }
+        },
+        {
+          "name": "Historial - página 2, 10 por página",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/accounts/{{accountNumber}}/transactions?page=1&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounts", "{{accountNumber}}", "transactions"],
+              "query": [{ "key": "page", "value": "1" }, { "key": "size", "value": "10" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Transacciones por Referencia (Q4)",
+      "item": [
+        {
+          "name": "Buscar transacción por referencia (auto-guardada)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/reference/{{transactionReference}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "reference", "{{transactionReference}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar referencia fija del depósito idempotente",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/reference/550e8400-e29b-41d4-a716-446655440000",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "reference", "550e8400-e29b-41d4-a716-446655440000"]
+            }
+          }
+        },
+        {
+          "name": "Error - Referencia inexistente (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/transactions/reference/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "reference", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Transferencias Salientes por Rango de Fechas (Q3)",
+      "item": [
+        {
+          "name": "Transferencias salientes del cliente (rango de fechas)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientIdentification}}/transfers/outgoing?startDate=2026-04-01&endDate=2026-05-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientIdentification}}", "transfers", "outgoing"],
+              "query": [
+                { "key": "startDate", "value": "2026-04-01" },
+                { "key": "endDate", "value": "2026-05-01" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Transferencias salientes - mes completo (sin resultados si no hay)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientIdentification}}/transfers/outgoing?startDate=2026-01-01&endDate=2026-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "{{clientIdentification}}", "transfers", "outgoing"],
+              "query": [
+                { "key": "startDate", "value": "2026-01-01" },
+                { "key": "endDate", "value": "2026-01-31" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Error - Cliente no encontrado (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clients/0000000000/transfers/outgoing?startDate=2026-04-01&endDate=2026-05-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["clients", "0000000000", "transfers", "outgoing"],
+              "query": [
+                { "key": "startDate", "value": "2026-04-01" },
+                { "key": "endDate", "value": "2026-05-01" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
